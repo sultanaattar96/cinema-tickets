@@ -15,7 +15,10 @@ public class CinemaTicketsApplication {
 		SpringApplication.run(CinemaTicketsApplication.class, args);
 		System.out.println("Hi Sultana!");
 		
-		/*TicketPaymentService paymentService = (accountId, amount) -> 
+		/*
+		 *I was using this part for testing!
+		 *
+		 * TicketPaymentService paymentService = (accountId, amount) -> 
         System.out.println("Payment Successful: Account " + accountId + " charged £" + amount);
     
 	    SeatReservationService reservationService = (accountId, totalSeats) -> 

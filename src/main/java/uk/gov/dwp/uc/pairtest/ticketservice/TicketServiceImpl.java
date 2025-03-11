@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TicketServiceImpl implements TicketService {
@@ -22,6 +23,10 @@ public class TicketServiceImpl implements TicketService {
     private static final int CHILD_PRICE = 15;
     private final TicketPaymentService ticketPaymentService;
     private final SeatReservationService seatReservationService;
+    
+    // Store last processed data for retrieval by accountId
+    // Using this method as can not change the TicketService, and need to send calculated data to controller to show on UI.
+    private final ConcurrentHashMap<Long, PurchaseResponse> purchaseDataStore = new ConcurrentHashMap<>();
 
     public TicketServiceImpl(TicketPaymentService ticketPaymentService, SeatReservationService seatReservationService) {
         this.ticketPaymentService = ticketPaymentService;
@@ -29,8 +34,9 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public PurchaseResponse purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) {
-        if (accountId == null || accountId <= 0) {
+    public void purchaseTickets(Long accountId, TicketTypeRequest... ticketTypeRequests) {
+        //Throws InvalidPurchaseException for invalid account IDs
+    	if (accountId == null || accountId <= 0) {
             throw new InvalidPurchaseException("Invalid account ID");
         }
 
@@ -41,6 +47,8 @@ public class TicketServiceImpl implements TicketService {
         int totalSeats = 0;
         int adultTickets = 0;
 
+        //Clear Error Handling
+        //Throws InvalidPurchaseException for invalid no adult tickets, or exceeding the ticket limit.
         for (TicketTypeRequest request : ticketTypeRequests) {
             switch (request.getTicketType()) {
                 case ADULT:
@@ -71,6 +79,13 @@ public class TicketServiceImpl implements TicketService {
         ticketPaymentService.makePayment(accountId, totalAmount);
         seatReservationService.reserveSeat(accountId, totalSeats);
 
-        return new PurchaseResponse(totalAmount, totalSeats);
+        //return new PurchaseResponse(totalAmount, totalSeats);
+        
+        //Store the calculated data
+        purchaseDataStore.put(accountId, new PurchaseResponse(totalAmount, totalSeats));
+    }
+    
+    public PurchaseResponse getPurchaseResponse(Long accountId) {
+        return purchaseDataStore.get(accountId);
     }
 }

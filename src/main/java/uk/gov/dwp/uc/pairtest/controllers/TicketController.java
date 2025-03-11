@@ -11,6 +11,7 @@ import uk.gov.dwp.uc.pairtest.domain.TicketType;
 import uk.gov.dwp.uc.pairtest.domain.TicketTypeRequest;
 import uk.gov.dwp.uc.pairtest.exception.InvalidPurchaseException;
 import uk.gov.dwp.uc.pairtest.ticketservice.TicketService;
+import uk.gov.dwp.uc.pairtest.ticketservice.TicketServiceImpl;
 
 @Controller
 public class TicketController {
@@ -19,11 +20,12 @@ public class TicketController {
     private static final AtomicLong accountIdCounter = new AtomicLong(1000);
 	
     private final TicketService ticketService;
+    private final TicketServiceImpl ticketServiceImpl;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, TicketServiceImpl ticketServiceImpl) {
         this.ticketService = ticketService;
+        this.ticketServiceImpl = ticketServiceImpl;
     }
-
     @GetMapping("/")
     public String showForm() {
         return "index";  // Loads the ticket purchase form
@@ -49,17 +51,18 @@ public class TicketController {
             };
 
             //call service & get response
-            PurchaseResponse response = ticketService.purchaseTickets(accountId, requests);
-
-            //Pass the actual values to the front-end
-            //Add messages to show in the UI
-            String paymentMessage = "Payment processed: Account " + accountId + " charged £" + response.getTotalCost();
-            String seatMessage = "Seat reservation successful: " + response.getTotalSeats() + " seats reserved.";
-
-            model.addAttribute("totalCost", response.getTotalCost());
-            model.addAttribute("totalSeats", response.getTotalSeats());
+            //PurchaseResponse response = ticketService.purchaseTickets(accountId, requests);
+            
+            // Call service method (does not return data)
+            ticketService.purchaseTickets(accountId, requests);
+            
+            // Retrieve calculated data
+            //Using this method as can not change the TicketService, and need data to show on UI.
+            PurchaseResponse purchaseData = ticketServiceImpl.getPurchaseResponse(accountId);
+            
+            model.addAttribute("totalCost", purchaseData.getTotalCost());
+            model.addAttribute("totalSeats", purchaseData.getTotalSeats());
             model.addAttribute("accountId", accountId);
-            //model.addAttribute("seatMessage", seatMessage);
 
             return "result"; // Redirects to the result page
         } catch (InvalidPurchaseException e) {
